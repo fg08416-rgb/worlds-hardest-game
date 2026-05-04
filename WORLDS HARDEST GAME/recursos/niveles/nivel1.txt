@@ -1,0 +1,27 @@
+// The DOPO Hardest Game - Nivel 1 (original)
+NOMBRE=Nivel 1 - El Clasico
+TIEMPO=90
+FILAS=9
+COLUMNAS=20
+TABLERO=
+# # # # # # # # # # # # # # # # # # # #
+# Z Z Z . . . . . . . . . . . . F F F #
+# Z Z Z . . . . . . . . . . . . F F F #
+# Z Z Z . . . . . . . . . . . . F F F #
+# Z Z Z . . . . . . . . . . . . F F F #
+# # # # . . . . . . . . . . . . # # # #
+# # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # #
+MONEDAS=
+A 2 5
+A 3 8
+A 2 11
+A 4 7
+A 3 13
+ENEMIGOS=
+B H 2 5
+B H 3 9
+B H 4 7
+B H 2 12
+B H 3 5

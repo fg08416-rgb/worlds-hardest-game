@@ -1,0 +1,230 @@
+package dominio.juego;
+
+/**
+ * Representa un nivel del juego, incluyendo tablero, monedas, enemigos y zonas.
+ *
+ * @authors Francisco Gomez, Oscar Lopez
+ */
+import dominio.enemigos.Enemigo;
+import dominio.objetivos.Moneda;
+import dominio.personajes.Cuadrado;
+import dominio.zonas.Zona;
+import dominio.zonas.ZonaFinal;
+import dominio.zonas.ZonaInicial;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Nivel {
+    private String nombre;
+    private Tablero tablero;
+    private List<Moneda> monedas;
+    private List<Enemigo> enemigos;
+    private List<Zona> zonas;
+    private int tiempoLimite;
+    private int tiempoTranscurrido;
+
+    private int filaSpawn;
+    private int columnaSpawn;
+
+    /**
+     * Construye un nivel con nombre, tablero y tiempo límite dados.
+     *
+     * @param nombre       nombre descriptivo del nivel
+     * @param tablero      tablero de celdas del nivel
+     * @param tiempoLimite tiempo máximo en segundos para completar el nivel
+     */
+    public Nivel(String nombre, Tablero tablero, int tiempoLimite) {
+        this.nombre = nombre;
+        this.tablero = tablero;
+        this.tiempoLimite = tiempoLimite;
+        this.tiempoTranscurrido = 0;
+        this.monedas = new ArrayList<>();
+        this.enemigos = new ArrayList<>();
+        this.zonas = new ArrayList<>();
+    }
+
+    /**
+     * Ordena a todos los enemigos del nivel que ejecuten su lógica de movimiento.
+     */
+    public void actualizarEnemigos() {
+        for (Enemigo e : enemigos) {
+            e.mover(tablero);
+        }
+    }
+
+    /**
+     * Verifica si algún enemigo colisiona con el jugador; si es así, lo mata,
+     * salvo que el jugador esté en una zona segura.
+     *
+     * @param jugador cuadrado del jugador cuya posición se verifica
+     */
+    public void verificarColisiones(Cuadrado jugador) {
+        TipoCelda celdaJugador = tablero.getCelda(jugador.getFila(), jugador.getColumna()).getTipo();
+        if (celdaJugador == TipoCelda.ZONA_INICIAL || celdaJugador == TipoCelda.ZONA_FINAL) {
+            return;
+        }
+        for (Enemigo e : enemigos) {
+            if (e.colisionaCon(jugador)) {
+                jugador.morir();
+                break;
+            }
+        }
+    }
+
+    /**
+     * Marca como recolectadas todas las monedas no recogidas en la posición indicada.
+     *
+     * @param fila    fila donde se encuentra el jugador
+     * @param columna columna donde se encuentra el jugador
+     */
+    public void recogerMonedasEn(int fila, int columna) {
+        for (Moneda m : monedas) {
+            if (!m.estaRecolectada() && m.getFila() == fila && m.getColumna() == columna) {
+                m.recolectar();
+            }
+        }
+    }
+
+    /**
+     * Determina si el nivel está completo: todas las monedas recogidas y el jugador en la zona final.
+     *
+     * @param jugador cuadrado del jugador cuya posición se verifica
+     * @return true si el nivel está completado, false en caso contrario
+     */
+    public boolean estaCompleto(Cuadrado jugador) {
+        if (!todasMonedasRecogidas()) return false;
+        for (Zona z : zonas) {
+            if (z instanceof ZonaFinal && z.contiene(jugador.getFila(), jugador.getColumna())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Indica si todas las monedas del nivel han sido recolectadas.
+     *
+     * @return true si no queda ninguna moneda sin recolectar
+     */
+    public boolean todasMonedasRecogidas() {
+        return monedas.stream().allMatch(Moneda::estaRecolectada);
+    }
+
+    /**
+     * Retorna la cantidad de monedas que el jugador ha recogido hasta el momento.
+     *
+     * @return número de monedas recolectadas
+     */
+    public int getMonedasRecogidas() {
+        return (int) monedas.stream().filter(Moneda::estaRecolectada).count();
+    }
+
+    /**
+     * Indica si el tiempo disponible para el nivel se ha agotado.
+     *
+     * @return true si el tiempo transcurrido es mayor o igual al límite
+     */
+    public boolean tiempoAgotado() {
+        return tiempoTranscurrido >= tiempoLimite;
+    }
+
+    /**
+     * Incrementa en uno el contador de segundos transcurridos en el nivel.
+     */
+    public void avanzarTiempo() {
+        tiempoTranscurrido++;
+    }
+
+    /**
+     * Retorna el tiempo restante en segundos; nunca es negativo.
+     *
+     * @return segundos que quedan antes de que se agote el tiempo
+     */
+    public int getTiempoRestante() {
+        return Math.max(0, tiempoLimite - tiempoTranscurrido);
+    }
+
+    /**
+     * Agrega una moneda al nivel.
+     *
+     * @param m moneda a agregar
+     */
+    public void agregarMoneda(Moneda m)   { monedas.add(m); }
+
+    /**
+     * Agrega un enemigo al nivel.
+     *
+     * @param e enemigo a agregar
+     */
+    public void agregarEnemigo(Enemigo e) { enemigos.add(e); }
+
+    /**
+     * Agrega una zona al nivel. Si es una ZonaInicial, actualiza el punto de spawn del jugador.
+     *
+     * @param z zona a agregar (inicial, final u otra)
+     */
+    public void agregarZona(Zona z) {
+        zonas.add(z);
+        if (z instanceof ZonaInicial) {
+            filaSpawn    = z.getFila()    + z.getAlto()  / 2;
+            columnaSpawn = z.getColumna() + z.getAncho() / 2;
+        }
+    }
+
+    /**
+     * Retorna el nombre del nivel.
+     *
+     * @return nombre del nivel
+     */
+    public String getNombre()           { return nombre; }
+
+    /**
+     * Retorna el tablero de celdas del nivel.
+     *
+     * @return tablero del nivel
+     */
+    public Tablero getTablero()         { return tablero; }
+
+    /**
+     * Retorna la lista de monedas del nivel.
+     *
+     * @return lista de monedas
+     */
+    public List<Moneda> getMonedas()    { return monedas; }
+
+    /**
+     * Retorna la lista de enemigos del nivel.
+     *
+     * @return lista de enemigos
+     */
+    public List<Enemigo> getEnemigos()  { return enemigos; }
+
+    /**
+     * Retorna la lista de zonas del nivel.
+     *
+     * @return lista de zonas
+     */
+    public List<Zona> getZonas()        { return zonas; }
+
+    /**
+     * Retorna el tiempo límite del nivel en segundos.
+     *
+     * @return tiempo límite en segundos
+     */
+    public int getTiempoLimite()        { return tiempoLimite; }
+
+    /**
+     * Retorna la fila del punto de reaparición inicial del jugador.
+     *
+     * @return fila de spawn
+     */
+    public int getFilaSpawn()           { return filaSpawn; }
+
+    /**
+     * Retorna la columna del punto de reaparición inicial del jugador.
+     *
+     * @return columna de spawn
+     */
+    public int getColumnaSpawn()        { return columnaSpawn; }
+}
